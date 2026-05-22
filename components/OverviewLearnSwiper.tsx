@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Swiper from "swiper";
-import { Navigation } from "swiper/modules";
+import { Autoplay, Navigation } from "swiper/modules";
 import "swiper/css";
 import { learnSlides } from "@/lib/data";
 import { Reveal } from "./Reveal";
@@ -15,15 +15,27 @@ export function OverviewLearnSwiper() {
 
   useEffect(() => {
     if (!swiperRef.current || !prevRef.current || !nextRef.current) return;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const swiper = new Swiper(swiperRef.current, {
-      modules: [Navigation],
+      modules: [Navigation, Autoplay],
+      loop: true,
       slidesPerView: 1.12,
       spaceBetween: 16,
+      speed: 1600,
       grabCursor: true,
       navigation: {
         nextEl: nextRef.current,
         prevEl: prevRef.current,
       },
+      autoplay: prefersReducedMotion
+        ? false
+        : {
+            delay: 4000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+            reverseDirection: false,
+          },
       breakpoints: {
         640: { slidesPerView: 2.1, spaceBetween: 20 },
         1024: { slidesPerView: 3, spaceBetween: 24 },
@@ -68,7 +80,10 @@ export function OverviewLearnSwiper() {
         </div>
       </div>
 
-      <div ref={swiperRef} className="swiper ov-learn-swiper mt-5 overflow-visible px-1 pb-2">
+      <div
+        ref={swiperRef}
+        className="swiper ov-learn-swiper ov-learn-swiper--drift mt-5 overflow-hidden px-1 pb-2"
+      >
         <div className="swiper-wrapper">
           {learnSlides.map((slide) => {
             const Icon = slide.icon;

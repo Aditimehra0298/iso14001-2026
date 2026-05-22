@@ -35,7 +35,7 @@ function Overview() {
               <h2 className="font-display mt-3 text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl lg:text-4xl">
                 Practical, Tutor-Led Transition Learning for{" "}
                 <span className="text-gradient">
-                  Auditors, EMS Professionals, Consultants, and Professional Teams.
+                  Auditors, EMS Professionals, Consultants, &amp; Professional Teams.
                 </span>
               </h2>
               <p className="mt-4 max-w-xl text-base leading-relaxed text-muted sm:text-lg">

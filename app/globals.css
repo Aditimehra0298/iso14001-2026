@@ -854,8 +854,32 @@ header.header-scrolled .nav-link:hover {
   background: rgba(200, 238, 232, 0.85);
   border: 1px solid rgba(11, 95, 99, 0.12);
 }
+.ov-learn-swiper--drift {
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+}
 .ov-learn-swiper .swiper-slide {
   height: auto;
+}
+.ov-learn-swiper .swiper-wrapper {
+  transition-timing-function: linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ov-learn-swiper .swiper-wrapper {
+    transition-timing-function: ease;
+  }
 }
 .ov-learn-card {
   height: 100%;

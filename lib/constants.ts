@@ -1,20 +1,18 @@
-export const HERO_VIDEO =
-  "https://res.cloudinary.com/dwnnakrrh/video/upload/c_fill,w_1920,h_1080,g_center,q_auto:good/f_mp4/v1779349417/AQMnMIiaZMQ8S-xhyGyxWGuKoXs7XJYU6EPMkZw_NcI9aT7clGVxHdojneWSDe5hBMgBfNiYYHpEMDsZewU9vgHcQJ_ZFra6MwsdzaQ.mp4_yhzco0.mp4";
+import { SITE_LOGO } from "@/lib/media";
 
-export const HERO_POSTER =
-  "https://res.cloudinary.com/dwnnakrrh/video/upload/so_0,c_fill,w_1920,h_1080,g_center,q_auto,f_jpg/v1779349417/AQMnMIiaZMQ8S-xhyGyxWGuKoXs7XJYU6EPMkZw_NcI9aT7clGVxHdojneWSDe5hBMgBfNiYYHpEMDsZewU9vgHcQJ_ZFra6MwsdzaQ.mp4_yhzco0";
-
-export const OVERVIEW_VIDEO =
-  "https://res.cloudinary.com/dwnnakrrh/video/upload/c_fill,w_1920,h_1080,g_center,q_auto:good/f_mp4/v1779353461/AQPkPMMKnVFfX41ezDCELADqlZ1Ew2sKvwgbhuIyUXdgIPsEyFF42Eh7binX6YvEhbW9pGnhy5o931K1qwefhh1MuYFF6jFN1erlFKoyfyQElF9A7D2yUDLyxSxMBA.mp4_q7lnbt.mp4";
-
-export const OVERVIEW_POSTER =
-  "https://res.cloudinary.com/dwnnakrrh/video/upload/so_0,c_fill,w_1920,h_1080,g_center,q_auto,f_jpg/v1779353461/AQPkPMMKnVFfX41ezDCELADqlZ1Ew2sKvwgbhuIyUXdgIPsEyFF42Eh7binX6YvEhbW9pGnhy5o931K1qwefhh1MuYFF6jFN1erlFKoyfyQElF9A7D2yUDLyxSxMBA.mp4_q7lnbt";
+export {
+  FAQ_VIDEO,
+  FAQ_VIDEO_POSTER,
+  HERO_POSTER,
+  HERO_VIDEO,
+  OVERVIEW_POSTER,
+  OVERVIEW_VIDEO,
+  SITE_ICON,
+  SITE_LOGO,
+} from "@/lib/media";
 
 /** Free preview length per module before blur + register prompt */
 export const MODULE_PREVIEW_MS = 10 * 1000;
-
-/** Optimized logo for header/footer (full logo.png kept for high-res use) */
-export const SITE_LOGO = "/logo-112.png";
 
 /**
  * Who should attend — card photos (16:10).
@@ -60,13 +58,6 @@ export const WORKSHOP_BG_IMAGE =
 /** Course banner below workshop calendar — includes register CTA overlay */
 export const WORKSHOP_PROMO_IMAGE =
   "https://res.cloudinary.com/dwnnakrrh/image/upload/f_auto,q_auto,w_720/v1779423663/WhatsApp_Image_2026-05-22_at_9.45.19_AM_sd3oq6.jpg";
-
-/** FAQ section video — original file, no Cloudinary crop/resize */
-export const FAQ_VIDEO =
-  "https://res.cloudinary.com/dwnnakrrh/video/upload/v1779410678/AQMrUqsC1EAA8GlbIFAZDVu6-ht6soI-4CdsM8PZk1CKBMR-zifgI0gV_KN38AMwncX7TQCVd0pljdUMiDcQ73l_6-qWdBU-vpVmfyY.mp4_ao8fln.mp4";
-
-export const FAQ_VIDEO_POSTER =
-  "https://res.cloudinary.com/dwnnakrrh/video/upload/so_0,f_jpg/v1779410678/AQMrUqsC1EAA8GlbIFAZDVu6-ht6soI-4CdsM8PZk1CKBMR-zifgI0gV_KN38AMwncX7TQCVd0pljdUMiDcQ73l_6-qWdBU-vpVmfyY.mp4_ao8fln";
 
 /** Self-paced online course */
 export const SELFPACED_PRICE_USD = 80;

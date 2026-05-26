@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, UserPlus } from "lucide-react";
 import type { CurriculumModule } from "@/lib/data";
 import { MODULE_PREVIEW_MS } from "@/lib/constants";
+import { moduleVideoUrl } from "@/lib/module-videos";
 import { FormCta } from "./FormCta";
 import { REGISTER_MODULE_CTA, REGISTER_PRIMARY } from "@/lib/marketing";
 import { useCurriculumPlay } from "./CurriculumPlayContext";
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function ModuleVideoCard({ module: mod }: Props) {
+  const videoSrc = moduleVideoUrl(mod.videoPath);
   const { playToken } = useCurriculumPlay();
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -67,14 +69,14 @@ export function ModuleVideoCard({ module: mod }: Props) {
       v.play().catch(() => setVideoError(true));
     };
 
-    v.src = mod.video;
+    v.src = videoSrc;
     v.currentTime = 0;
     v.load();
     setPlaying(true);
     startProgress();
 
     lockTimerRef.current = setTimeout(lockPreview, MODULE_PREVIEW_MS);
-  }, [mod.video, startProgress, lockPreview, clearLockTimer]);
+  }, [videoSrc, startProgress, lockPreview, clearLockTimer]);
 
   useEffect(() => {
     if (playToken === 0 || playToken === lastPlayToken.current) return;
@@ -129,8 +131,11 @@ export function ModuleVideoCard({ module: mod }: Props) {
           )}
 
           {videoError && (
-            <div className="module-video-error">
+            <div className="module-video-error px-3 text-center">
               <p className="text-xs font-bold">Video unavailable</p>
+              <p className="mt-1 text-[10px] font-semibold opacity-90">
+                Upload module MP4s to Cloudinary (npm run upload-videos), then redeploy Vercel.
+              </p>
             </div>
           )}
         </div>
@@ -152,7 +157,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
           {mod.title.replace(/^Module \d+ — /, "")}
         </h3>
         <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{mod.desc}</p>
-        {mod.videoPart2 && (
+        {mod.videoPart2Path && (
           <p className="mt-2 text-xs font-semibold text-burgundy">+ Part 2 after enrollment</p>
         )}
         <FormCta

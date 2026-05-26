@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import { moduleVideoUrl } from "./module-videos";
 import {
   ATTEND_CERTIFICATION_BODY_AUDITORS_IMAGE,
   ATTEND_CONSULTANTS_IMAGE,
@@ -10,6 +9,7 @@ import {
   LIVE_WORKSHOP_PRICE_LABEL,
   SELFPACED_PRICE_LABEL,
 } from "./constants";
+import { moduleVideoPath } from "./media";
 import {
   BadgeCheck,
   Briefcase,
@@ -230,28 +230,29 @@ export type CurriculumModule = {
   short: string;
   title: string;
   desc: string;
-  video: string;
+  /** Local path under public/videos — resolved to Cloudinary on Vercel at runtime */
+  videoPath: string;
   /** Extra clip unlocked after registration (e.g. Module 4 part 2) */
-  videoPart2?: string;
+  videoPart2Path?: string;
 };
 
 export const curriculumModules: CurriculumModule[] = [
-  { n: 1, short: "Overview", title: "Module 1 — Transition Overview", desc: "Understand the purpose, structure and auditor expectations of ISO 14001:2026 transition.", video: moduleVideoUrl("/videos/module-01.mp4") },
-  { n: 2, short: "Clause 4", title: "Module 2 — Clause 4: Context", desc: "Environmental conditions, interested parties, lifecycle scope and risk linkage.", video: moduleVideoUrl("/videos/module-02.mp4") },
-  { n: 3, short: "Clause 5", title: "Module 3 — Clause 5: Leadership", desc: "Leadership accountability, environmental policy, compliance terminology and policy notes.", video: moduleVideoUrl("/videos/module-03.mp4") },
+  { n: 1, short: "Overview", title: "Module 1 — Transition Overview", desc: "Understand the purpose, structure and auditor expectations of ISO 14001:2026 transition.", videoPath: moduleVideoPath("module-01.mp4") },
+  { n: 2, short: "Clause 4", title: "Module 2 — Clause 4: Context", desc: "Environmental conditions, interested parties, lifecycle scope and risk linkage.", videoPath: moduleVideoPath("module-02.mp4") },
+  { n: 3, short: "Clause 5", title: "Module 3 — Clause 5: Leadership", desc: "Leadership accountability, environmental policy, compliance terminology and policy notes.", videoPath: moduleVideoPath("module-03.mp4") },
   {
     n: 4,
     short: "Clause 6",
     title: "Module 4 — Clause 6: Planning",
     desc: "Risks, opportunities, aspects, objectives and new planning of changes requirement. Includes a second part after registration.",
-    video: moduleVideoUrl("/videos/module-04.mp4"),
-    videoPart2: moduleVideoUrl("/videos/module-04-part2.mp4"),
+    videoPath: moduleVideoPath("module-04.mp4"),
+    videoPart2Path: moduleVideoPath("module-04-part2.mp4"),
   },
-  { n: 5, short: "Clause 7", title: "Module 5 — Clause 7: Support", desc: "Competence, awareness, communication and documented information at point of use.", video: moduleVideoUrl("/videos/module-05.mp4") },
-  { n: 6, short: "Clause 8", title: "Module 6 — Clause 8: Operation", desc: "Operational control, emergency preparedness and external provider influence.", video: moduleVideoUrl("/videos/module-06.mp4") },
-  { n: 7, short: "Clause 9", title: "Module 7 — Clause 9: Evaluation", desc: "Monitoring, measurement, analysis, evaluation and internal audit objectives.", video: moduleVideoUrl("/videos/module-07.mp4") },
-  { n: 8, short: "Clause 10", title: "Module 8 — Clause 10: Improvement", desc: "Nonconformity, corrective action and integrated continual improvement.", video: moduleVideoUrl("/videos/module-08.mp4") },
-  { n: 9, short: "Assessment", title: "Module 9 — Final Assessment", desc: "Scenario-based questions, case study application and transition audit readiness check.", video: moduleVideoUrl("/videos/module-09.mp4") },
+  { n: 5, short: "Clause 7", title: "Module 5 — Clause 7: Support", desc: "Competence, awareness, communication and documented information at point of use.", videoPath: moduleVideoPath("module-05.mp4") },
+  { n: 6, short: "Clause 8", title: "Module 6 — Clause 8: Operation", desc: "Operational control, emergency preparedness and external provider influence.", videoPath: moduleVideoPath("module-06.mp4") },
+  { n: 7, short: "Clause 9", title: "Module 7 — Clause 9: Evaluation", desc: "Monitoring, measurement, analysis, evaluation and internal audit objectives.", videoPath: moduleVideoPath("module-07.mp4") },
+  { n: 8, short: "Clause 10", title: "Module 8 — Clause 10: Improvement", desc: "Nonconformity, corrective action and integrated continual improvement.", videoPath: moduleVideoPath("module-08.mp4") },
+  { n: 9, short: "Assessment", title: "Module 9 — Final Assessment", desc: "Scenario-based questions, case study application and transition audit readiness check.", videoPath: moduleVideoPath("module-09.mp4") },
 ];
 
 export const faqItems = [

@@ -34,7 +34,12 @@ function loadEnvLocal() {
 
 loadEnvLocal();
 
-const cloudName = process.env.CLOUDINARY_CLOUD_NAME || "dwnnakrrh";
+const cloudName =
+  process.env.CLOUDINARY_CLOUD_NAME ||
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+  "dwnnakrrh";
+const moduleFolder =
+  process.env.NEXT_PUBLIC_CLOUDINARY_MODULE_FOLDER || "iso14001-modules";
 const apiKey = process.env.CLOUDINARY_API_KEY;
 const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
@@ -106,7 +111,7 @@ async function main() {
       console.warn(`Skip (missing): ${name}`);
       continue;
     }
-    const publicId = `iso14001-modules/${name.replace(/\.mp4$/, "")}`;
+    const publicId = `${moduleFolder}/${name.replace(/\.mp4$/, "")}`;
     process.stdout.write(`${name} → ${publicId} … `);
     try {
       const url = await upload(path, publicId);

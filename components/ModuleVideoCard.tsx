@@ -13,6 +13,9 @@ type Props = {
   module: CurriculumModule;
 };
 
+/** Stagger loads so the browser is not fetching 9 large MP4s at once (module 9 often lost). */
+const MODULE_LOAD_STAGGER_MS = 450;
+
 export function ModuleVideoCard({ module: mod }: Props) {
   const videoSrc = moduleVideoUrl(mod.videoPath);
   const { playToken } = useCurriculumPlay();
@@ -23,7 +26,9 @@ export function ModuleVideoCard({ module: mod }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const staggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPlayToken = useRef(0);
+  const retryCountRef = useRef(0);
 
   const stopProgress = useCallback(() => {
     if (progressRef.current) clearInterval(progressRef.current);
@@ -59,35 +64,77 @@ export function ModuleVideoCard({ module: mod }: Props) {
     if (!v) return;
 
     clearLockTimer();
+    stopProgress();
+    retryCountRef.current = 0;
     setLocked(false);
     setVideoError(false);
+    setPlaying(false);
+    setProgress(0);
     v.muted = true;
-    v.onerror = () => setVideoError(true);
-    v.onloadeddata = () => {
-      setVideoError(false);
+
+    const scheduleLockAfterPlay = () => {
+      clearLockTimer();
+      lockTimerRef.current = setTimeout(lockPreview, MODULE_PREVIEW_MS);
+    };
+
+    const tryPlay = () => {
       v.muted = true;
-      v.play().catch(() => setVideoError(true));
+      v.play().catch(() => {
+        if (retryCountRef.current < 2) {
+          retryCountRef.current += 1;
+          window.setTimeout(() => {
+            v.load();
+            tryPlay();
+          }, 800);
+        } else {
+          setVideoError(true);
+        }
+      });
+    };
+
+    v.onerror = null;
+    v.onplaying = null;
+
+    v.onerror = () => {
+      if (retryCountRef.current < 2) {
+        retryCountRef.current += 1;
+        window.setTimeout(() => {
+          v.load();
+          tryPlay();
+        }, 800);
+      } else {
+        setVideoError(true);
+      }
+    };
+
+    v.onplaying = () => {
+      setVideoError(false);
+      setPlaying(true);
+      startProgress();
+      scheduleLockAfterPlay();
     };
 
     v.src = videoSrc;
     v.currentTime = 0;
     v.load();
-    setPlaying(true);
-    startProgress();
-
-    lockTimerRef.current = setTimeout(lockPreview, MODULE_PREVIEW_MS);
-  }, [videoSrc, startProgress, lockPreview, clearLockTimer]);
+    tryPlay();
+  }, [videoSrc, startProgress, lockPreview, clearLockTimer, stopProgress]);
 
   useEffect(() => {
     if (playToken === 0 || playToken === lastPlayToken.current) return;
     lastPlayToken.current = playToken;
-    startPreview();
-  }, [playToken, startPreview]);
+    const delay = (mod.n - 1) * MODULE_LOAD_STAGGER_MS;
+    staggerTimerRef.current = setTimeout(startPreview, delay);
+    return () => {
+      if (staggerTimerRef.current) clearTimeout(staggerTimerRef.current);
+    };
+  }, [playToken, startPreview, mod.n]);
 
   useEffect(
     () => () => {
       stopProgress();
       clearLockTimer();
+      if (staggerTimerRef.current) clearTimeout(staggerTimerRef.current);
     },
     [stopProgress, clearLockTimer]
   );
@@ -110,7 +157,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
             ref={videoRef}
             muted
             playsInline
-            preload="metadata"
+            preload="none"
             className="h-full w-full object-cover"
             aria-label={mod.title}
           />

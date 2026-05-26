@@ -18,7 +18,7 @@ const MAX_RETRIES = 4;
 
 export function ModuleVideoCard({ module: mod }: Props) {
   const videoSrc = moduleVideoUrl(mod.videoPath);
-  const { playToken, allowedThroughModule } = useCurriculumPlay();
+  const { playToken } = useCurriculumPlay();
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -83,7 +83,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
     }
 
     setLoading(true);
-    await acquireModuleVideoSlot();
+    await acquireModuleVideoSlot(mod.n === 9 ? 0 : mod.n);
     hasSlotRef.current = true;
 
     clearLockTimer();
@@ -111,9 +111,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
       v.play().catch(() => {
         if (retryCountRef.current < MAX_RETRIES) {
           retryCountRef.current += 1;
-          window.setTimeout(() => {
-            v.load();
-          }, 1000);
+          setTimeout(() => v.load(), 1000);
         } else {
           fail();
         }
@@ -127,7 +125,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
     v.onerror = () => {
       if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current += 1;
-        window.setTimeout(() => v.load(), 1000);
+        setTimeout(() => v.load(), 1000);
       } else {
         fail();
       }
@@ -146,15 +144,14 @@ export function ModuleVideoCard({ module: mod }: Props) {
     v.src = videoSrc;
     v.currentTime = 0;
     v.load();
-  }, [videoSrc, startProgress, lockPreview, clearLockTimer, stopProgress, releaseSlot]);
+  }, [videoSrc, mod.n, startProgress, lockPreview, clearLockTimer, stopProgress, releaseSlot]);
 
   const maybeStartPreview = useCallback(() => {
     if (playToken === 0) return;
-    if (mod.n > allowedThroughModule) return;
     if (!isVisibleRef.current) return;
     if (previewStartedRef.current) return;
     void startPreview();
-  }, [playToken, allowedThroughModule, mod.n, startPreview]);
+  }, [playToken, startPreview]);
 
   useEffect(() => {
     if (playToken === 0 || playToken === lastPlayToken.current) return;
@@ -170,11 +167,8 @@ export function ModuleVideoCard({ module: mod }: Props) {
       v.removeAttribute("src");
       v.load();
     }
-  }, [playToken]);
-
-  useEffect(() => {
     maybeStartPreview();
-  }, [maybeStartPreview, allowedThroughModule]);
+  }, [playToken, maybeStartPreview]);
 
   useEffect(() => {
     const el = articleRef.current;
@@ -184,7 +178,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
         isVisibleRef.current = entry.isIntersecting;
         if (entry.isIntersecting) maybeStartPreview();
       },
-      { threshold: 0.12, rootMargin: "80px 0px" }
+      { threshold: 0.08, rootMargin: "120px 0px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -206,7 +200,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
     >
       <div className="relative aspect-video w-full bg-[#071a20]">
         <div
-          className="module-progress-bar absolute inset-x-0 top-0 z-20 h-1 bg-mauve/20"
+          className="module-progress-bar pointer-events-none absolute inset-x-0 top-0 z-30 h-1 bg-mauve/20"
           aria-hidden
         >
           <div
@@ -214,6 +208,10 @@ export function ModuleVideoCard({ module: mod }: Props) {
             style={{ width: `${progress}%` }}
           />
         </div>
+
+        <span className="pointer-events-none absolute left-3 top-4 z-40 rounded-full bg-burgundy px-2.5 py-1 text-xs font-black text-white shadow-sm">
+          Module {mod.n}
+        </span>
 
         <div className={`module-video-wrap h-full w-full ${locked ? "is-locked" : ""}`}>
           <video
@@ -249,7 +247,7 @@ export function ModuleVideoCard({ module: mod }: Props) {
           )}
 
           {videoError && (
-            <div className="module-video-error px-3 text-center">
+            <div className="module-video-error z-20 px-3 text-center">
               <p className="text-xs font-bold">Video unavailable</p>
               <button
                 type="button"
@@ -267,12 +265,8 @@ export function ModuleVideoCard({ module: mod }: Props) {
           )}
         </div>
 
-        <span className="absolute left-3 top-4 z-20 rounded-full bg-burgundy px-2.5 py-1 text-xs font-black text-white shadow-sm">
-          Module {mod.n}
-        </span>
-
         {playing && !locked && (
-          <span className="absolute bottom-3 right-3 z-20 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold text-burgundy shadow-sm">
+          <span className="pointer-events-none absolute bottom-3 right-3 z-40 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold text-burgundy shadow-sm">
             Preview · 10 sec
           </span>
         )}

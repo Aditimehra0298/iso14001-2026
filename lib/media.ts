@@ -27,6 +27,23 @@ export const MODULE_VIDEOS_CDN_URL = env("NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL", ""
   ""
 );
 
+const DEFAULT_GITHUB_VIDEO_BASE =
+  process.env.VERCEL === "1" ||
+  process.env.VERCEL_ENV ||
+  process.env.NODE_ENV === "production"
+    ? "https://media.githubusercontent.com/media/Aditimehra0298/iso14001-2026/main/public/videos"
+    : "";
+
+/**
+ * GitHub LFS CDN for module MP4s (used on Vercel so videos are not in the deploy bundle).
+ * Override or disable with NEXT_PUBLIC_MODULE_VIDEOS_GITHUB_BASE (set to empty to off).
+ */
+export const MODULE_VIDEOS_GITHUB_BASE = (
+  process.env.NEXT_PUBLIC_MODULE_VIDEOS_GITHUB_BASE !== undefined
+    ? process.env.NEXT_PUBLIC_MODULE_VIDEOS_GITHUB_BASE.trim()
+    : DEFAULT_GITHUB_VIDEO_BASE
+).replace(/\/$/, "");
+
 /** Build a curriculum module video path from a filename */
 export function moduleVideoPath(filename: string): string {
   const base = MODULE_VIDEOS_BASE.replace(/\/$/, "");

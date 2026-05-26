@@ -35,13 +35,16 @@ Paths can be under `public/` (e.g. `/logo.png`) or full `https://` URLs.
 
 **Local dev:** Add MP4 files to `public/videos/` (`module-01.mp4` … `module-09.mp4`). See `public/videos/README.md`.
 
-**Vercel (no Cloudinary):** Module videos are **not** auto-routed to Cloudinary. Use one of:
+**Vercel:** Module MP4s are stored in **Git LFS** on GitHub and streamed from `media.githubusercontent.com` (not bundled in the Vercel deploy). After cloning, run:
 
-1. **`NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL`** — base URL where MP4s are hosted (e.g. S3, Google Cloud Storage).
-2. **`lib/module-videos.manifest.json`** — full URL per file (commit to Git).
-3. **`public/videos/`** — include MP4s in the deploy (see `public/videos/README.md`).
+```bash
+git lfs install
+git lfs pull
+```
 
-**Cloudinary (optional):** Set `NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS=true`, add API keys, run `npm run upload-videos`, redeploy.
+Place MP4s in `public/videos/`, commit with LFS, and push. Vercel production builds use the GitHub CDN automatically.
+
+**Overrides:** `NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL`, `lib/module-videos.manifest.json`, or Cloudinary (`NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS=true`).
 
 ## Stack
 

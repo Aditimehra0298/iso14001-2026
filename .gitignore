@@ -20,8 +20,7 @@
 # production
 /build
 
-# large module previews — host separately or add via Git LFS
-/public/videos/*.mp4
+# MP4s in public/videos/ are tracked with Git LFS (served via GitHub CDN on Vercel)
 /New folder (2)/
 
 # misc

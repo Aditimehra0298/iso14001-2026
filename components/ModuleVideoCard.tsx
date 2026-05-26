@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, UserPlus } from "lucide-react";
 import type { CurriculumModule } from "@/lib/data";
 import { MODULE_PREVIEW_MS } from "@/lib/constants";
+import { acquireModuleVideoSlot, releaseModuleVideoSlot } from "@/lib/module-video-queue";
 import { moduleVideoUrl } from "@/lib/module-videos";
 import { FormCta } from "./FormCta";
 import { REGISTER_MODULE_CTA, REGISTER_PRIMARY } from "@/lib/marketing";
@@ -13,22 +14,25 @@ type Props = {
   module: CurriculumModule;
 };
 
-/** Stagger loads so the browser is not fetching 9 large MP4s at once (module 9 often lost). */
-const MODULE_LOAD_STAGGER_MS = 450;
+const MAX_RETRIES = 4;
 
 export function ModuleVideoCard({ module: mod }: Props) {
   const videoSrc = moduleVideoUrl(mod.videoPath);
-  const { playToken } = useCurriculumPlay();
+  const { playToken, allowedThroughModule } = useCurriculumPlay();
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [locked, setLocked] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const articleRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const staggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPlayToken = useRef(0);
   const retryCountRef = useRef(0);
+  const hasSlotRef = useRef(false);
+  const previewStartedRef = useRef(false);
+  const isVisibleRef = useRef(false);
 
   const stopProgress = useCallback(() => {
     if (progressRef.current) clearInterval(progressRef.current);
@@ -38,6 +42,13 @@ export function ModuleVideoCard({ module: mod }: Props) {
   const clearLockTimer = useCallback(() => {
     if (lockTimerRef.current) clearTimeout(lockTimerRef.current);
     lockTimerRef.current = null;
+  }, []);
+
+  const releaseSlot = useCallback(() => {
+    if (hasSlotRef.current) {
+      hasSlotRef.current = false;
+      releaseModuleVideoSlot();
+    }
   }, []);
 
   const startProgress = useCallback(() => {
@@ -57,11 +68,23 @@ export function ModuleVideoCard({ module: mod }: Props) {
     setProgress(100);
     setPlaying(false);
     setLocked(true);
-  }, [stopProgress]);
+    setLoading(false);
+    releaseSlot();
+  }, [stopProgress, releaseSlot]);
 
-  const startPreview = useCallback(() => {
+  const startPreview = useCallback(async () => {
+    if (previewStartedRef.current) return;
+    previewStartedRef.current = true;
+
     const v = videoRef.current;
-    if (!v) return;
+    if (!v) {
+      previewStartedRef.current = false;
+      return;
+    }
+
+    setLoading(true);
+    await acquireModuleVideoSlot();
+    hasSlotRef.current = true;
 
     clearLockTimer();
     stopProgress();
@@ -77,39 +100,45 @@ export function ModuleVideoCard({ module: mod }: Props) {
       lockTimerRef.current = setTimeout(lockPreview, MODULE_PREVIEW_MS);
     };
 
+    const fail = () => {
+      setVideoError(true);
+      setLoading(false);
+      releaseSlot();
+    };
+
     const tryPlay = () => {
       v.muted = true;
       v.play().catch(() => {
-        if (retryCountRef.current < 2) {
+        if (retryCountRef.current < MAX_RETRIES) {
           retryCountRef.current += 1;
           window.setTimeout(() => {
             v.load();
-            tryPlay();
-          }, 800);
+          }, 1000);
         } else {
-          setVideoError(true);
+          fail();
         }
       });
     };
 
     v.onerror = null;
     v.onplaying = null;
+    v.oncanplay = null;
 
     v.onerror = () => {
-      if (retryCountRef.current < 2) {
+      if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current += 1;
-        window.setTimeout(() => {
-          v.load();
-          tryPlay();
-        }, 800);
+        window.setTimeout(() => v.load(), 1000);
       } else {
-        setVideoError(true);
+        fail();
       }
     };
+
+    v.oncanplay = () => tryPlay();
 
     v.onplaying = () => {
       setVideoError(false);
       setPlaying(true);
+      setLoading(false);
       startProgress();
       scheduleLockAfterPlay();
     };
@@ -117,30 +146,64 @@ export function ModuleVideoCard({ module: mod }: Props) {
     v.src = videoSrc;
     v.currentTime = 0;
     v.load();
-    tryPlay();
-  }, [videoSrc, startProgress, lockPreview, clearLockTimer, stopProgress]);
+  }, [videoSrc, startProgress, lockPreview, clearLockTimer, stopProgress, releaseSlot]);
+
+  const maybeStartPreview = useCallback(() => {
+    if (playToken === 0) return;
+    if (mod.n > allowedThroughModule) return;
+    if (!isVisibleRef.current) return;
+    if (previewStartedRef.current) return;
+    void startPreview();
+  }, [playToken, allowedThroughModule, mod.n, startPreview]);
 
   useEffect(() => {
     if (playToken === 0 || playToken === lastPlayToken.current) return;
     lastPlayToken.current = playToken;
-    const delay = (mod.n - 1) * MODULE_LOAD_STAGGER_MS;
-    staggerTimerRef.current = setTimeout(startPreview, delay);
-    return () => {
-      if (staggerTimerRef.current) clearTimeout(staggerTimerRef.current);
-    };
-  }, [playToken, startPreview, mod.n]);
+    previewStartedRef.current = false;
+    setLocked(false);
+    setVideoError(false);
+    setPlaying(false);
+    setLoading(false);
+    setProgress(0);
+    const v = videoRef.current;
+    if (v) {
+      v.removeAttribute("src");
+      v.load();
+    }
+  }, [playToken]);
+
+  useEffect(() => {
+    maybeStartPreview();
+  }, [maybeStartPreview, allowedThroughModule]);
+
+  useEffect(() => {
+    const el = articleRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) maybeStartPreview();
+      },
+      { threshold: 0.12, rootMargin: "80px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [maybeStartPreview]);
 
   useEffect(
     () => () => {
       stopProgress();
       clearLockTimer();
-      if (staggerTimerRef.current) clearTimeout(staggerTimerRef.current);
+      releaseSlot();
     },
-    [stopProgress, clearLockTimer]
+    [stopProgress, clearLockTimer, releaseSlot]
   );
 
   return (
-    <article className="module-grid-card flex flex-col overflow-hidden rounded-2xl border border-mauve/15 bg-white shadow-md ring-1 ring-mauve/10 transition hover:shadow-lg">
+    <article
+      ref={articleRef}
+      className="module-grid-card flex flex-col overflow-hidden rounded-2xl border border-mauve/15 bg-white shadow-md ring-1 ring-mauve/10 transition hover:shadow-lg"
+    >
       <div className="relative aspect-video w-full bg-[#071a20]">
         <div
           className="module-progress-bar absolute inset-x-0 top-0 z-20 h-1 bg-mauve/20"
@@ -162,6 +225,14 @@ export function ModuleVideoCard({ module: mod }: Props) {
             aria-label={mod.title}
           />
 
+          {loading && !playing && !videoError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#071a20]/80">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">
+                Loading preview…
+              </span>
+            </div>
+          )}
+
           {locked && !videoError && (
             <div className="module-register-overlay">
               <span className="module-muted-badge">10 sec preview ended</span>
@@ -180,10 +251,18 @@ export function ModuleVideoCard({ module: mod }: Props) {
           {videoError && (
             <div className="module-video-error px-3 text-center">
               <p className="text-xs font-bold">Video unavailable</p>
-              <p className="mt-1 text-[10px] font-semibold opacity-90">
-                Add MP4s to public/videos/, set URLs in lib/module-videos.manifest.json, or set
-                NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL in Vercel.
-              </p>
+              <button
+                type="button"
+                className="mt-2 text-[10px] font-bold text-white underline"
+                onClick={() => {
+                  previewStartedRef.current = false;
+                  releaseSlot();
+                  setVideoError(false);
+                  void startPreview();
+                }}
+              >
+                Tap to retry
+              </button>
             </div>
           )}
         </div>

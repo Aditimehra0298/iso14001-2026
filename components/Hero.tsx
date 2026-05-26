@@ -95,11 +95,13 @@ export function Hero() {
               <ArrowRight className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
             </FormCta>
             <FormCta variant="live-workshop" className="hero-cta-btn hero-cta-btn--secondary">
-              {REGISTER_LIVE_WORKSHOP}
+              <span className="sm:hidden">Live Workshop</span>
+              <span className="hidden sm:inline">{REGISTER_LIVE_WORKSHOP}</span>
               <Calendar className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
             </FormCta>
             <FormCta variant="download" className="hero-cta-btn hero-cta-btn--secondary">
-              Download Cheat Sheet
+              <span className="sm:hidden">Cheat Sheet</span>
+              <span className="hidden sm:inline">Download Cheat Sheet</span>
               <Download className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
             </FormCta>
           </div>

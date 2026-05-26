@@ -3,6 +3,8 @@
  * See .env.example
  */
 
+import { withBasePath } from "@/lib/base-path";
+
 function env(key: string, fallback: string): string {
   const value = process.env[key]?.trim();
   return value || fallback;
@@ -11,7 +13,8 @@ function env(key: string, fallback: string): string {
 /** Normalize to absolute path (/…) or leave full URL unchanged */
 export function resolveAssetUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? path : `/${path}`;
+  const local = path.startsWith("/") ? path : `/${path}`;
+  return withBasePath(local);
 }
 
 /** Local folder for curriculum MP4s (under public/) */
@@ -48,7 +51,7 @@ export const MODULE_VIDEOS_GITHUB_BASE = (
 export function moduleVideoPath(filename: string): string {
   const base = MODULE_VIDEOS_BASE.replace(/\/$/, "");
   const name = filename.replace(/^\/+/, "").replace(/^videos\//, "");
-  return `${base}/${name}`;
+  return withBasePath(`${base}/${name}`);
 }
 
 /** Header / footer logo */

@@ -14,6 +14,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Deploy to a subdirectory (e.g. sftrainings.org)
+
+If the site is **not** at the domain root, set before `npm run build`:
+
+```bash
+NEXT_PUBLIC_BASE_PATH=/iso-14001-2026-transition
+```
+
+This fixes the registration form (`/api/lead`) and asset paths. Without it, forms POST to the wrong URL and fail.
+
+If the host only serves static files (no Node), the form falls back to the n8n webhook directly.
+
 ## Media paths (logo & videos)
 
 Copy `.env.example` to `.env.local` and set any overrides:

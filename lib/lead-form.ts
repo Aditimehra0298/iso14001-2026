@@ -1,4 +1,6 @@
+import { withBasePath } from "@/lib/base-path";
 import { TRANSITION_SHEET_PDF } from "./constants";
+import { N8N_LEAD_WEBHOOK_URL } from "./n8n-webhook";
 
 export type LeadFormVariant = "register" | "live-workshop" | "download";
 
@@ -145,7 +147,7 @@ export const LEAD_FORM_CONFIG: Record<LeadFormVariant, LeadFormConfig> = {
 
 export function triggerTransitionSheetDownload() {
   const link = document.createElement("a");
-  link.href = TRANSITION_SHEET_PDF;
+  link.href = withBasePath(TRANSITION_SHEET_PDF);
   link.download = "ISO_14001_2026_Transition_Sheet.pdf";
   link.rel = "noopener";
   document.body.appendChild(link);
@@ -158,16 +160,46 @@ export type LeadSubmissionPayload = LeadFormValues & {
   timestamp: string;
 };
 
+async function submitLeadToN8n(
+  payload: LeadSubmissionPayload
+): Promise<{ ok: boolean; error?: string }> {
+  const webhook =
+    process.env.NEXT_PUBLIC_N8N_LEAD_WEBHOOK_URL?.trim() || N8N_LEAD_WEBHOOK_URL;
+
+  try {
+    const res = await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      return { ok: false, error: "Could not save your details. Please try again." };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error. Please try again." };
+  }
+}
+
 export async function submitLeadToSheet(
   payload: LeadSubmissionPayload
 ): Promise<{ ok: boolean; error?: string }> {
-  const res = await fetch("/api/lead", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const apiUrl = withBasePath("/api/lead");
 
-  if (!res.ok) {
+  try {
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) return { ok: true };
+
+    /* Static hosting or wrong path — no Next.js API; post to n8n directly */
+    if (res.status === 404 || res.status === 405) {
+      return submitLeadToN8n(payload);
+    }
+
     let message = "Something went wrong. Please try again.";
     try {
       const data = (await res.json()) as { error?: string };
@@ -176,7 +208,7 @@ export async function submitLeadToSheet(
       /* use default */
     }
     return { ok: false, error: message };
+  } catch {
+    return submitLeadToN8n(payload);
   }
-
-  return { ok: true };
 }

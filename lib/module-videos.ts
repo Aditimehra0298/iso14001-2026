@@ -5,9 +5,9 @@
  * 1. Full https URL in data or manifest
  * 2. Entry in lib/module-videos.manifest.json
  * 3. NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL + filename
- * 4. GitHub LFS CDN (default on Vercel production builds)
- * 5. Cloudinary (only if NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS=true)
- * 6. Local path under public/ (NEXT_PUBLIC_MODULE_VIDEOS_PATH, default /videos)
+ * 4. Local paths in development (npm run dev)
+ * 5. GitHub LFS CDN (production builds on Vercel / Cloudways)
+ * 6. Cloudinary (only if NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS=true)
  */
 
 import {
@@ -45,9 +45,14 @@ function parseFilename(path: string): string {
   return path.replace(/^\/videos\//, "").replace(/^\//, "");
 }
 
-/** Cloudinary is opt-in only — Vercel no longer defaults to it */
 export function useCloudinaryVideos(): boolean {
   return process.env.NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS === "true";
+}
+
+function useLocalModuleVideos(): boolean {
+  if (process.env.NEXT_PUBLIC_USE_LOCAL_MODULE_VIDEOS === "true") return true;
+  if (process.env.NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS === "true") return false;
+  return process.env.NODE_ENV === "development";
 }
 
 function manifestVideoUrl(filename: string): string | null {
@@ -79,6 +84,10 @@ export function moduleVideoUrl(path: string): string {
 
   const fromCdn = cdnVideoUrl(filename);
   if (fromCdn) return fromCdn;
+
+  if (useLocalModuleVideos()) {
+    return moduleVideoPath(filename);
+  }
 
   const fromGithub = githubVideoUrl(filename);
   if (fromGithub) return fromGithub;

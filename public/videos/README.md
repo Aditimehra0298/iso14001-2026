@@ -23,12 +23,34 @@ Each clip plays a **10-second muted preview**, then blurs with a Register / Logi
 
 Recommended: 720p or 1080p, H.264, muted-friendly (no audio required).
 
-## Vercel deployment
+## Local development
 
-MP4s are **not** pushed to GitHub. For production, run from project root:
+Copy MP4s into this folder (`public/videos/`). They are served at `/videos/module-01.mp4`, etc.
 
-```bash
-npm run upload-videos
+## Vercel (without Cloudinary)
+
+Pick **one** of these:
+
+### 1. Host on your site (simplest if files are small enough)
+
+1. Place MP4s in `public/videos/`.
+2. Remove or comment out `/public/videos/*.mp4` in `.gitignore` if you want them in Git.
+3. Push and redeploy Vercel.
+
+### 2. External CDN URL (recommended for large files)
+
+In **Vercel → Settings → Environment Variables**, add:
+
+```
+NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL=https://your-bucket.s3.amazonaws.com/videos
 ```
 
-Requires `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` in `.env.local`. Then redeploy Vercel.
+Files must be reachable at `{that URL}/module-01.mp4`, etc.
+
+### 3. Per-file URLs in Git
+
+Edit `lib/module-videos.manifest.json` with full `https://` URLs for each file, commit, and redeploy.
+
+### Cloudinary (optional)
+
+Only if you set `NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS=true` and run `npm run upload-videos`.

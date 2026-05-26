@@ -1,26 +1,32 @@
 /**
- * Curriculum module videos are served from Cloudinary in production (Vercel).
- * Local MP4s in public/videos/ are used only when Cloudinary is not configured.
+ * Curriculum module video URLs.
  *
- * Upload once: npm run upload-videos (requires Cloudinary API keys in .env.local)
- * Or upload manually to folder public_id prefix: iso14001-modules/
+ * Resolution order (first match wins):
+ * 1. Full https URL in data or manifest
+ * 2. Entry in lib/module-videos.manifest.json
+ * 3. NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL + filename
+ * 4. Cloudinary (only if NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS=true)
+ * 5. Local path under public/ (NEXT_PUBLIC_MODULE_VIDEOS_PATH, default /videos)
  */
 
 import {
   CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_MODULE_FOLDER,
+  MODULE_VIDEOS_CDN_URL,
   MODULE_VIDEOS_BASE,
   moduleVideoPath,
   resolveAssetUrl,
 } from "@/lib/media";
+import manifest from "./module-videos.manifest.json";
 
 const CLOUDINARY_TRANSFORM = "q_auto:good,f_mp4";
+
+const manifestUrls = manifest as Record<string, string>;
 
 function cloudinaryVideoUrl(publicId: string): string {
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/${CLOUDINARY_TRANSFORM}/${publicId}`;
 }
 
-/** Derive Cloudinary public_id from filename (e.g. module-01.mp4 → iso14001-modules/module-01) */
 function moduleCloudinaryPublicId(filename: string): string {
   const base = filename
     .replace(/^\/videos\//, "")
@@ -29,28 +35,43 @@ function moduleCloudinaryPublicId(filename: string): string {
   return `${CLOUDINARY_MODULE_FOLDER}/${base}`;
 }
 
-/** Use Cloudinary on Vercel/production; local /videos/ in dev unless forced */
+function parseFilename(path: string): string {
+  const base = MODULE_VIDEOS_BASE.replace(/\/$/, "");
+  if (path.startsWith(`${base}/`)) {
+    return path.slice(base.length + 1);
+  }
+  return path.replace(/^\/videos\//, "").replace(/^\//, "");
+}
+
+/** Cloudinary is opt-in only — Vercel no longer defaults to it */
 export function useCloudinaryVideos(): boolean {
-  if (process.env.NEXT_PUBLIC_USE_LOCAL_MODULE_VIDEOS === "true") return false;
-  if (process.env.NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS === "true") return true;
-  if (process.env.VERCEL === "1" || process.env.VERCEL_ENV) return true;
-  return process.env.NODE_ENV === "production";
+  return process.env.NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS === "true";
+}
+
+function manifestVideoUrl(filename: string): string | null {
+  const url = manifestUrls[filename]?.trim();
+  return url ? url : null;
+}
+
+function cdnVideoUrl(filename: string): string | null {
+  if (!MODULE_VIDEOS_CDN_URL) return null;
+  const base = MODULE_VIDEOS_CDN_URL.replace(/\/$/, "");
+  return `${base}/${filename}`;
 }
 
 /**
  * Resolve a module video path (e.g. "/videos/module-01.mp4") to a playable URL.
- * Accepts full URLs unchanged.
  */
 export function moduleVideoUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
 
-  const base = MODULE_VIDEOS_BASE.replace(/\/$/, "");
-  let filename = path;
-  if (path.startsWith(`${base}/`)) {
-    filename = path.slice(base.length + 1);
-  } else {
-    filename = path.replace(/^\/videos\//, "").replace(/^\//, "");
-  }
+  const filename = parseFilename(path);
+
+  const fromManifest = manifestVideoUrl(filename);
+  if (fromManifest) return fromManifest;
+
+  const fromCdn = cdnVideoUrl(filename);
+  if (fromCdn) return fromCdn;
 
   if (useCloudinaryVideos()) {
     return cloudinaryVideoUrl(moduleCloudinaryPublicId(filename));

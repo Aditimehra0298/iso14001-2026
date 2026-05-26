@@ -134,7 +134,8 @@ export function ModuleVideoCard({ module: mod }: Props) {
             <div className="module-video-error px-3 text-center">
               <p className="text-xs font-bold">Video unavailable</p>
               <p className="mt-1 text-[10px] font-semibold opacity-90">
-                Upload module MP4s to Cloudinary (npm run upload-videos), then redeploy Vercel.
+                Add MP4s to public/videos/, set URLs in lib/module-videos.manifest.json, or set
+                NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL in Vercel.
               </p>
             </div>
           )}

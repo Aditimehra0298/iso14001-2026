@@ -17,6 +17,16 @@ export function resolveAssetUrl(path: string): string {
 /** Local folder for curriculum MP4s (under public/) */
 export const MODULE_VIDEOS_BASE = env("NEXT_PUBLIC_MODULE_VIDEOS_PATH", "/videos");
 
+/**
+ * Optional external base for module MP4s on Vercel (no Cloudinary).
+ * Example: https://your-bucket.s3.amazonaws.com/iso14001/videos
+ * Resolves module-01.mp4 → {base}/module-01.mp4
+ */
+export const MODULE_VIDEOS_CDN_URL = env("NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL", "").replace(
+  /\/$/,
+  ""
+);
+
 /** Build a curriculum module video path from a filename */
 export function moduleVideoPath(filename: string): string {
   const base = MODULE_VIDEOS_BASE.replace(/\/$/, "");

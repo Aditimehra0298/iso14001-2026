@@ -26,8 +26,8 @@ Copy `.env.example` to `.env.local` and set any overrides:
 | `NEXT_PUBLIC_OVERVIEW_VIDEO` / `_POSTER` | Overview section |
 | `NEXT_PUBLIC_FAQ_VIDEO` / `_POSTER` | FAQ section |
 | `NEXT_PUBLIC_MODULE_VIDEOS_PATH` | Local curriculum folder (`/videos` default) |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary account |
-| `NEXT_PUBLIC_CLOUDINARY_MODULE_FOLDER` | Upload folder (`iso14001-modules` default) |
+| `NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL` | External base URL for module MP4s on Vercel |
+| `NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS` | Set `true` to use Cloudinary (opt-in) |
 
 Paths can be under `public/` (e.g. `/logo.png`) or full `https://` URLs.
 
@@ -35,13 +35,13 @@ Paths can be under `public/` (e.g. `/logo.png`) or full `https://` URLs.
 
 **Local dev:** Add MP4 files to `public/videos/` (`module-01.mp4` … `module-09.mp4`). See `public/videos/README.md`.
 
-**Vercel / production:** Videos are **not** in Git (too large). They are loaded from **Cloudinary**:
+**Vercel (no Cloudinary):** Module videos are **not** auto-routed to Cloudinary. Use one of:
 
-1. Add Cloudinary API keys to `.env.local` (see `.env.example`).
-2. Run `npm run upload-videos` once (uploads from `public/videos/`).
-3. Redeploy Vercel.
+1. **`NEXT_PUBLIC_MODULE_VIDEOS_CDN_URL`** — base URL where MP4s are hosted (e.g. S3, Google Cloud Storage).
+2. **`lib/module-videos.manifest.json`** — full URL per file (commit to Git).
+3. **`public/videos/`** — include MP4s in the deploy (see `public/videos/README.md`).
 
-Public IDs: `{NEXT_PUBLIC_CLOUDINARY_MODULE_FOLDER}/module-01` … `module-09`, `module-04-part2`.
+**Cloudinary (optional):** Set `NEXT_PUBLIC_USE_CLOUDINARY_MODULE_VIDEOS=true`, add API keys, run `npm run upload-videos`, redeploy.
 
 ## Stack
 
